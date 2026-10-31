@@ -1,0 +1,8 @@
+-- PREFERRED (DCM-native, Private Preview). Uncomment once DEFINE AGENT is enabled on the
+-- account and delete the CREATE AGENT block in post_deploy.sql. Specs live in agents/
+-- (declared as assets in manifest.yml). Asset files are not Jinja-rendered, so there is
+-- one spec per environment with literal object names.
+--
+-- DEFINE AGENT DCM_DEMO.SALES_AI{{env_suffix}}.SALES_AGENT
+--   COMMENT = 'Demo sales agent managed by DCM'
+--   FROM SPECIFICATION '{{ "asset://sales_agent_dev" if env_suffix == "_DEV" else "asset://sales_agent_prod" }}';

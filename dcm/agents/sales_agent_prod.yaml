@@ -1,0 +1,18 @@
+models:
+  orchestration: auto
+instructions:
+  response: "Answer concisely and include the numbers you used. Revenue is in USD."
+  orchestration: "Use the sales_analyst tool for any question about orders, revenue, units, regions or products. Politely decline questions unrelated to sales."
+  sample_questions:
+    - question: "What is total revenue by region?"
+tools:
+  - tool_spec:
+      type: cortex_analyst_text_to_sql
+      name: sales_analyst
+      description: "Queries demo sales orders (revenue, units, order count) by region, product and date."
+tool_resources:
+  sales_analyst:
+    semantic_view: DCM_DEMO.SALES_AI.SALES_SV
+    execution_environment:
+      type: warehouse
+      warehouse: AICOLLEGE

@@ -1,0 +1,36 @@
+# Merge to main -> plan + deploy PROD. The "production" GitHub environment should have
+# required reviewers configured, so a human approves before this job runs.
+name: Main - DCM deploy PROD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: dcm-prod
+  cancel-in-progress: false
+
+env:
+  SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+  SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+  SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+
+jobs:
+  deploy-prod:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/snow-setup
+
+      - name: Plan PROD
+        working-directory: dcm
+        run: snow dcm plan -c ci --target PROD | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Deploy PROD
+        working-directory: dcm
+        run: snow dcm deploy -c ci --target PROD --alias "main-${GITHUB_SHA::7}"
+
+      - name: Post-deploy PROD
+        run: snow sql -c ci -f dcm/post_deploy.sql -D env_suffix=

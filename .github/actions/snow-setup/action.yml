@@ -1,0 +1,29 @@
+# Shared setup: writes ~/.snowflake/connections.toml for key-pair auth so both the
+# snow CLI and ci/run_evals.py use the same "ci" connection.
+name: Snowflake CLI setup
+description: Install snow CLI and configure the ci connection
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - shell: bash
+      run: pip install "snowflake-cli>=3.17" snowflake-connector-python
+    - shell: bash
+      env:
+        SNOWFLAKE_PRIVATE_KEY: ${{ env.SNOWFLAKE_PRIVATE_KEY }}
+      run: |
+        mkdir -p ~/.snowflake
+        printf '%s\n' "$SNOWFLAKE_PRIVATE_KEY" > ~/.snowflake/rsa_key.p8
+        chmod 600 ~/.snowflake/rsa_key.p8
+        cat > ~/.snowflake/connections.toml <<EOF
+        [ci]
+        account = "${SNOWFLAKE_ACCOUNT}"
+        user = "${SNOWFLAKE_USER}"
+        role = "DCM_DEPLOYER"
+        warehouse = "AICOLLEGE"
+        authenticator = "SNOWFLAKE_JWT"
+        private_key_file = "$HOME/.snowflake/rsa_key.p8"
+        EOF
+        chmod 600 ~/.snowflake/connections.toml

@@ -1,0 +1,16 @@
+# Resolved Agent Evaluation config for EXECUTE_AI_EVALUATION (DEV only).
+# CI uploads this to @DCM_DEMO.SALES_AI_DEV.EVAL_STAGE and runs it after every DEV deploy.
+# The dataset is (re)built from DCM_DEMO.SALES_AI_DEV.EVAL_QUESTIONS by ci/run_evals.py.
+evaluation:
+  agent_params:
+    agent_name: DCM_DEMO.SALES_AI_DEV.SALES_AGENT
+    agent_type: CORTEX AGENT
+    agent_version: LIVE
+  source_metadata:
+    type: dataset
+    dataset_name: DCM_DEMO.SALES_AI_DEV.SALES_AGENT_EVALSET
+metrics:
+  - name: answer_correctness
+    version: auto
+  - name: logical_consistency
+    version: auto
