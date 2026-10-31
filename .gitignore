@@ -1,0 +1,7 @@
+# DCM build artifacts
+dcm/out/
+# Scratch files from the Cortex Code agent-studio eval tool (resolved config lives in evals/)
+cortex_project/
+# Never commit keys
+*.p8
+*.pem

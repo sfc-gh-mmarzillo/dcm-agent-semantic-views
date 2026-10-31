@@ -1,0 +1,64 @@
+# PR checks: analyze -> plan (DEV + PROD preview) -> deploy DEV -> seed -> agent evals.
+# Branch protection on main should require this workflow to pass before merge.
+name: PR - DCM validate, deploy DEV, eval
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: dcm-dev           # one shared DEV environment: never deploy two PRs at once
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+  SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+  SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+  SNOWFLAKE_CONNECTION: ci
+  EVAL_THRESHOLD: '0.75'
+
+jobs:
+  validate-deploy-eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/snow-setup
+
+      - name: Analyze (DEV + PROD)
+        working-directory: dcm
+        run: |
+          snow dcm raw-analyze -c ci --target DEV
+          snow dcm raw-analyze -c ci --target PROD
+
+      - name: Plan DEV and preview PROD
+        working-directory: dcm
+        run: |
+          {
+            echo "## DCM plan: DEV"; echo '```'
+            snow dcm plan -c ci --target DEV | grep -E '^(CREATE|ALTER|DROP|Planned|[ │├└])' || true
+            echo '```'
+            echo "## DCM plan: PROD (preview, applied on merge)"; echo '```'
+            snow dcm plan -c ci --target PROD | grep -E '^(CREATE|ALTER|DROP|Planned|[ │├└])' || true
+            echo '```'
+          } > ../plan.md
+          cat ../plan.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment plan on PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: dcm-plan
+          path: plan.md
+
+      - name: Deploy DEV
+        working-directory: dcm
+        run: snow dcm deploy -c ci --target DEV --alias "pr-${{ github.event.number }}-${GITHUB_SHA::7}"
+
+      - name: Post-deploy DEV (agent + seed data + eval questions)
+        run: snow sql -c ci -f dcm/post_deploy.sql -D env_suffix=_DEV
+
+      - name: Agent evals (gate)
+        run: python ci/run_evals.py --run-name "pr_${{ github.event.number }}_${GITHUB_SHA::7}"

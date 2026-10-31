@@ -1,0 +1,33 @@
+manifest_version: 2
+type: DCM_PROJECT
+default_target: 'DEV'
+
+targets:
+  DEV:
+    account_identifier: SFSENORTHAMERICA-HOL_MATTMARZILLO
+    project_name: 'DCM_DEMO.PROJECTS.AGENT_SV_DEMO_DEV'
+    project_owner: DCM_DEPLOYER
+    templating_config: 'DEV'
+  PROD:
+    account_identifier: SFSENORTHAMERICA-HOL_MATTMARZILLO
+    project_name: 'DCM_DEMO.PROJECTS.AGENT_SV_DEMO_PROD'
+    project_owner: DCM_DEPLOYER
+    templating_config: 'PROD'
+
+templating:
+  defaults:
+    env_suffix: '_DEV'
+    warehouse: 'AICOLLEGE'
+  configurations:
+    DEV:
+      env_suffix: '_DEV'
+    PROD:
+      env_suffix: ''
+
+# Files outside sources/ that definitions reference via asset://<name>.
+# Assets are NOT Jinja-rendered, so environment-specific specs need one file per env.
+assets:
+  sales_agent_dev:
+    path: 'agents/sales_agent_dev.yaml'
+  sales_agent_prod:
+    path: 'agents/sales_agent_prod.yaml'
